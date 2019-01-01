@@ -58,6 +58,7 @@ class AddPlaceContainer extends React.Component<IProps, IState> {
             name={name}
             loading={loading}
             onSubmit={addPlaceFn}
+            pickedAddress={lat !== 0 && lng !== 0}
           />
         )}
       </AddPlaceQuery>
