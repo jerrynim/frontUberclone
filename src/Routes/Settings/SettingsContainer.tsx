@@ -6,8 +6,7 @@ import { getPlaces, userProfile } from "../../types/api";
 import SettingsPresenter from "./SettingsPresenter";
 
 class MiniProfileQuery extends Query<userProfile> {}
-
-class PlacesQeury extends Query<getPlaces> {}
+class PlacesQuery extends Query<getPlaces> {}
 
 class SettingsContainer extends React.Component {
   public render() {
@@ -16,17 +15,17 @@ class SettingsContainer extends React.Component {
         {(logUserOut) => (
           <MiniProfileQuery query={USER_PROFILE}>
             {({ data: userData, loading: userDataLoading }) => (
-              <PlacesQeury query={GET_PLACES}>
+              <PlacesQuery query={GET_PLACES}>
                 {({ data: placesData, loading: placesLoading }) => (
                   <SettingsPresenter
                     userDataLoading={userDataLoading}
                     placesLoading={placesLoading}
-                    placesData={placesData}
                     userData={userData}
+                    placesData={placesData}
                     logUserOut={logUserOut}
                   />
                 )}
-              </PlacesQeury>
+              </PlacesQuery>
             )}
           </MiniProfileQuery>
         )}
