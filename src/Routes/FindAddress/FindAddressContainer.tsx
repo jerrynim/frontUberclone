@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDom from "react-dom";
+import { RouteComponentProps } from "react-router-dom";
 import { geoCode, reverseGeoCode } from "../../mapHelpers";
 import FindAddressPresenter from "./FindAddressPresenter";
 
@@ -9,7 +10,11 @@ interface IState {
   address: string;
 }
 
-class FindAddressContainer extends React.Component<any, IState> {
+interface IProps extends RouteComponentProps<any> {
+  google: any;
+}
+
+class FindAddressContainer extends React.Component<IProps, IState> {
   public mapRef: any;
   public map: google.maps.Map;
   public state = {
@@ -29,14 +34,23 @@ class FindAddressContainer extends React.Component<any, IState> {
   }
 
   public render() {
-    return <FindAddressPresenter mapRef={this.mapRef} />;
+    const { address } = this.state;
+    return (
+      <FindAddressPresenter
+        mapRef={this.mapRef}
+        address={address}
+        onInputChange={this.onInputChange}
+        onInputBlur={this.onInputBlur}
+        onPickPlace={this.onPickPlace}
+      />
+    );
   }
 
-  public handleGeoError = () => {
+  public handleGeoError: PositionErrorCallback = () => {
     console.log("nolocation");
   };
 
-  public handleGeoSucces = (position: Position) => {
+  public handleGeoSucces: PositionCallback = (position: Position) => {
     const {
       coords: { latitude, longitude }
     } = position;
@@ -58,6 +72,7 @@ class FindAddressContainer extends React.Component<any, IState> {
         lng
       },
       disableDefaultUI: true,
+      minZoom: 8,
       zoom: 11
     };
     this.map = new maps.Map(mapNode, mapConfig);
@@ -82,9 +97,38 @@ class FindAddressContainer extends React.Component<any, IState> {
       });
     }
   };
-  public onInputBlur = () => {
+  public onInputBlur = async () => {
     const { address } = this.state;
-    geoCode(address);
+    const result = await geoCode(address);
+    if (result !== false) {
+      const { lat, lng, formatted_address: formattedAddress } = result;
+      this.setState({
+        address: formattedAddress,
+        lat,
+        lng
+      });
+      this.map.panTo({ lat, lng });
+    }
+  };
+  public onPickPlace = () => {
+    const { address, lat, lng } = this.state;
+    const { history } = this.props;
+    history.push({
+      pathname: "add/place",
+      state: {
+        address,
+        lat,
+        lng
+      }
+    });
+  };
+  public onInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const {
+      target: { value, name }
+    } = event;
+    this.setState({
+      [name]: value
+    } as any);
   };
 }
 
