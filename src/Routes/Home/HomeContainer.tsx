@@ -40,6 +40,7 @@ class HomeContainer extends React.Component<IProps, IState> {
   public userMarker: google.maps.Marker;
   public toMarker: google.maps.Marker;
   public directions: google.maps.DirectionsRenderer;
+  public drivers: google.maps.Marker[];
   public state = {
     distance: "",
     duration: "",
@@ -54,6 +55,7 @@ class HomeContainer extends React.Component<IProps, IState> {
   constructor(props) {
     super(props);
     this.mapRef = React.createRef();
+    this.drivers = [];
   }
   public componentDidMount() {
     navigator.geolocation.getCurrentPosition(
@@ -82,6 +84,10 @@ class HomeContainer extends React.Component<IProps, IState> {
     const { google } = this.props;
     const maps = google.maps;
     const mapNode = ReactDom.findDOMNode(this.mapRef.current);
+    if (!mapNode) {
+      this.loadMap(lat, lng);
+      return;
+    }
     const mapConfig: google.maps.MapOptions = {
       center: {
         lat,
@@ -189,23 +195,36 @@ class HomeContainer extends React.Component<IProps, IState> {
     const { isMenuOpen, toAddress, price } = this.state;
     return (
       <ProfileQuery query={USER_PROFILE}>
-        {({ data, loading }) => (
-          <NearbyQueries query={GET_NEARBY_DRIVERS}>
-            {() => (
-              <HomePresenter
-                loading={loading}
-                isMenuOpen={isMenuOpen}
-                toggleMenu={this.toggleMenu}
-                mapRef={this.mapRef}
-                toAddress={toAddress}
-                onInputChange={this.onInputChange}
-                price={price}
-                data={data}
-                onAddressSubmit={this.onAddressSubmit}
-              />
-            )}
-          </NearbyQueries>
-        )}
+        {({ data, loading }) => {
+          return (
+            <NearbyQueries
+              query={GET_NEARBY_DRIVERS}
+              pollInterval={1000}
+              skip={
+                (data &&
+                  data.GetMyProfile &&
+                  data.GetMyProfile.user &&
+                  data.GetMyProfile.user.isDriving) ||
+                false
+              }
+              onCompleted={this.handleNearbyDrivers}
+            >
+              {() => (
+                <HomePresenter
+                  loading={loading}
+                  isMenuOpen={isMenuOpen}
+                  toggleMenu={this.toggleMenu}
+                  mapRef={this.mapRef}
+                  toAddress={toAddress}
+                  onInputChange={this.onInputChange}
+                  price={price}
+                  data={data}
+                  onAddressSubmit={this.onAddressSubmit}
+                />
+              )}
+            </NearbyQueries>
+          );
+        }}
       </ProfileQuery>
     );
   }
@@ -302,6 +321,51 @@ class HomeContainer extends React.Component<IProps, IState> {
       this.setState({
         price: Number(parseFloat(distance.replace(",", "")) * 3).toFixed(2)
       });
+    }
+  };
+  public handleNearbyDrivers = (data: {} | getDrivers) => {
+    if ("GetNearbyDrivers" in data) {
+      const {
+        GetNearbyDrivers: { drivers, ok }
+      } = data;
+      if (ok && drivers) {
+        for (const driver of drivers) {
+          if (driver && driver.lastLat && driver.lastLng) {
+            const exisitingDriver:
+              | google.maps.Marker
+              | undefined = this.drivers.find(
+              (driverMarker: google.maps.Marker) => {
+                const markerID = driverMarker.get("ID");
+                return markerID === driver.id;
+              }
+            );
+            if (exisitingDriver) {
+              exisitingDriver.setPosition({
+                lat: driver.lastLat,
+                lng: driver.lastLng
+              });
+              exisitingDriver.setMap(this.map);
+            } else {
+              const markerOptions: google.maps.MarkerOptions = {
+                icon: {
+                  path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+                  scale: 5
+                },
+                position: {
+                  lat: driver.lastLat,
+                  lng: driver.lastLng
+                }
+              };
+              const newMarker: google.maps.Marker = new google.maps.Marker(
+                markerOptions
+              );
+              this.drivers.push(newMarker);
+              newMarker.set("ID", driver.id);
+              newMarker.setMap(this.map);
+            }
+          }
+        }
+      }
     }
   };
 }
