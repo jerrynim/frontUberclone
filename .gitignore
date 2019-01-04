@@ -8,15 +8,16 @@
 
 # production
 /build
-/public
+
 # misc
+/public
 .DS_Store
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 .gitignore
-image.d.ts
+images.d.ts
 package-lock.josn
 
 npm-debug.log*

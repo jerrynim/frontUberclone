@@ -44,7 +44,15 @@ const ExtendedButton = styled(Button)`
   width: 80%;
 `;
 
-const RequestButton = ExtendedButton.extend`
+const RequestButton = styled(Button)`
+  position: absolute;
+  bottom: 50px;
+  left: 0;
+  right: 0;
+  margin: auto;
+  z-index: 10;
+  height: auto;
+  width: 80%;
   bottom: 250px;
 `;
 
@@ -54,28 +62,27 @@ interface IProps {
   loading: boolean;
   mapRef: any;
   toAddress: string;
-  onInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onAddressSubmit: () => void;
   price?: string;
-  onAddressSubmit: () => Promise<void>;
   data?: userProfile;
-  requestRideFn: MutationFn;
+  onInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  requestRideFn?: MutationFn;
+  acceptRideFn?: MutationFn;
   nearbyRide?: getRides;
-  acceptRideFn: MutationFn;
 }
 
 const HomePresenter: React.SFC<IProps> = ({
-  data: { GetMyProfile: { user = null } = {} } = {},
-  nearbyRide: { GetNearbyRide: { ride = null } = {} } = {},
   isMenuOpen,
   toggleMenu,
   loading,
-  mapRef,
   toAddress,
+  mapRef,
   onInputChange,
-  price,
   onAddressSubmit,
+  price,
+  data: { GetMyProfile: { user = null } = {} } = {},
+  nearbyRide: { GetNearbyRide: { ride = null } = {} } = {},
   requestRideFn,
-  nearbyRide,
   acceptRideFn
 }) => (
   <Container>
@@ -106,7 +113,7 @@ const HomePresenter: React.SFC<IProps> = ({
           <ExtendedButton
             onClick={onAddressSubmit}
             disabled={toAddress === ""}
-            value={price ? "Change Address" : "Pick Address"}
+            value={price ? "Change address" : "Pick Address"}
           />
         </React.Fragment>
       )}
@@ -117,7 +124,6 @@ const HomePresenter: React.SFC<IProps> = ({
           value={`Request Ride ($${price})`}
         />
       )}
-      {nearbyRide && nearbyRide.GetNearbyRide && "sombody wants your car"}
       {ride && (
         <RidePopUp
           id={ride.id}
